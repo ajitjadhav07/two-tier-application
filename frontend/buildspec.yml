@@ -1,0 +1,25 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - echo Logging in to Amazon ECR...
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
+      - IMAGE_TAG=latest
+
+  build:
+    commands:
+      - echo Building frontend Docker image...
+      - docker build -t $ECR_REGISTRY/two-tier-frontend:$IMAGE_TAG .
+      - echo Build completed
+
+  post_build:
+    commands:
+      - echo Pushing frontend image to ECR...
+      - docker push $ECR_REGISTRY/two-tier-frontend:$IMAGE_TAG
+      - echo Writing imagedefinitions.json...
+      - printf '[{"name":"frontend","imageUri":"%s"}]' $ECR_REGISTRY/two-tier-frontend:$IMAGE_TAG > imagedefinitions.json
+
+artifacts:
+  files:
+    - imagedefinitions.json
