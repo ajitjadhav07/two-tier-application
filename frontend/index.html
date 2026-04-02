@@ -1,36 +1,48 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Two-Tier App</title>
+  <title>Three-Tier App</title>
   <style>
-    body { font-family: sans-serif; max-width: 500px; margin: 40px auto; padding: 0 20px; }
+    body { font-family: sans-serif; max-width: 600px; margin: 40px auto; padding: 0 20px; }
     h2 { color: #1e40af; }
-    input { padding: 8px; margin-right: 8px; border: 1px solid #ccc; border-radius: 4px; width: 200px; }
+    input { padding: 8px; margin-right: 8px; border: 1px solid #ccc; border-radius: 4px; width: 160px; }
     button { padding: 8px 16px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer; }
-    ul { list-style: none; padding: 0; margin-top: 20px; }
-    li { padding: 10px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
-    .del { background: #ef4444; padding: 4px 10px; font-size: 12px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th { background: #eff6ff; padding: 10px; text-align: left; border-bottom: 2px solid #bfdbfe; }
+    td { padding: 10px; border-bottom: 1px solid #e5e7eb; }
+    .del { background: #ef4444; color: white; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; }
     .status { font-size: 12px; color: #6b7280; margin-top: 8px; }
   </style>
 </head>
 <body>
-  <h2>My App - Deployed via AWS CI/CD</h2>
-  <input id="nameInput" placeholder="Enter name" />
+  <h2>Three-Tier App — User Manager</h2>
+  <p>Data stored in RDS MySQL database</p>
+  <input id="nameInput" placeholder="Name" />
+  <input id="emailInput" placeholder="Email" />
   <button onclick="addUser()">Add User</button>
   <p class="status" id="status">Loading...</p>
-  <ul id="userList"></ul>
+  <table>
+    <thead>
+      <tr><th>ID</th><th>Name</th><th>Email</th><th>Created</th><th>Action</th></tr>
+    </thead>
+    <tbody id="userTable"></tbody>
+  </table>
 
   <script>
     async function loadUsers() {
       try {
         const res = await fetch('/api/users');
         const users = await res.json();
-        document.getElementById('status').textContent = `${users.length} users loaded`;
-        document.getElementById('userList').innerHTML =
+        document.getElementById('status').textContent = `${users.length} users in database`;
+        document.getElementById('userTable').innerHTML =
           users.map(u => `
-            <li>${u.name}
-              <button class="del" onclick="deleteUser(${u.id})">Delete</button>
-            </li>`).join('');
+            <tr>
+              <td>${u.id}</td>
+              <td>${u.name}</td>
+              <td>${u.email}</td>
+              <td>${new Date(u.created_at).toLocaleDateString()}</td>
+              <td><button class="del" onclick="deleteUser(${u.id})">Delete</button></td>
+            </tr>`).join('');
       } catch(e) {
         document.getElementById('status').textContent = 'Error connecting to backend';
       }
@@ -38,13 +50,15 @@
 
     async function addUser() {
       const name = document.getElementById('nameInput').value.trim();
-      if (!name) return alert('Enter a name first');
+      const email = document.getElementById('emailInput').value.trim();
+      if (!name) return alert('Enter a name');
       await fetch('/api/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name })
+        body: JSON.stringify({ name, email })
       });
       document.getElementById('nameInput').value = '';
+      document.getElementById('emailInput').value = '';
       loadUsers();
     }
 
